@@ -1,16 +1,16 @@
 import express from "express";
 import dotenv from "dotenv";
-import { clerkMiddleware } from '@clerk/express'
+import { clerkMiddleware } from "@clerk/express";
 import fileUpload from "express-fileupload";
 import path from "path";
-import cors from "cors"
+import cors from "cors";
 import fs from "fs";
 import { createServer } from "http";
 import cron from "node-cron";
 
-import { intializeSocket } from "./lib/socket.js";
+import { initializeSocket } from "./lib/socket.js";
 
-import { connectDB } from "./lib/dib.js";
+import { connectDB } from "./lib/db.js";
 import userRoutes from "./routes/user.route.js";
 import adminRoutes from "./routes/admin.route.js";
 import authRoutes from "./routes/auth.route.js";
@@ -18,38 +18,34 @@ import songRoutes from "./routes/song.route.js";
 import albumRoutes from "./routes/album.route.js";
 import statRoutes from "./routes/stat.route.js";
 
+dotenv.config();
 
-
-dotenv.config()
-
-const app = express();
 const __dirname = path.resolve();
+const app = express();
 const PORT = process.env.PORT;
-const httpServer = createServer(app);
 
-intializeSocket(httpServer);
+const httpServer = createServer(app);
+initializeSocket(httpServer);
 
 app.use(
-    cors({
-        origin: "http://localhost:3000",
-        credentials: true,
-}));
+	cors({
+		origin: "http://localhost:3000",
+		credentials: true,
+	})
+);
 
-
-app.use(express.json()); 
-
-app.use(clerkMiddleware()); 
-
-
-app.use(fileUpload({ 
-    useTempFiles: true,
-    tempFileDir: path.join(__dirname, "tmp"),
-    createParentPath: true,
-    limits:{
-        fileSize: 10 * 1024 * 1024, 
-    }
-}));
-
+app.use(express.json()); // to parse req.body
+app.use(clerkMiddleware()); // this will add auth to req obj => req.auth
+app.use(
+	fileUpload({
+		useTempFiles: true,
+		tempFileDir: path.join(__dirname, "tmp"),
+		createParentPath: true,
+		limits: {
+			fileSize: 10 * 1024 * 1024, // 10MB  max file size
+		},
+	})
+);
 
 // cron jobs
 const tempDir = path.join(process.cwd(), "tmp");
@@ -81,13 +77,18 @@ if (process.env.NODE_ENV === "production") {
 	});
 }
 
-app.use((err, req, res, next) =>{
-    res.status(500).json({ message: process.env.NODE_ENV === "production" ? "Internal server error": err.message });
-})
+// error handler
+app.use((err, req, res, next) => {
+	res.status(500).json({ message: process.env.NODE_ENV === "production" ? "Internal server error" : err.message });
+});
 
-httpServer.listen(PORT, ()=> {
-    console.log("Sever is running on port" + PORT);
-    connectDB();
+httpServer.listen(PORT, () => {
+	console.log("Server is running on port " + PORT);
+	connectDB();
+});
+
+app.get("/health", (req, res) => {
+    res.status(200).json({ status: "Server is running" });
 });
 
 app.get("/health", (req, res) => {
