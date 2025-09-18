@@ -2,7 +2,7 @@ import { Server } from "socket.io";
 import { Message } from "../models/message.model.js";
 
 // initialize Socket.IO server
-export const initializeSocket = (server) => {
+export const intializeSocket = (server) => {
     const clientOrigin = process.env.CLIENT_URL || "http://localhost:5173";
     const io = new Server(server, {
         cors: {
