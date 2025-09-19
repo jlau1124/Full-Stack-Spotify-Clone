@@ -19,6 +19,8 @@ export const requireAdmin = async (req, res, next) => {
         if (!isAdmin) {
            return res.status(403).json({ message: "Unauthorized - you must be admin" });
         }
+          // ✅ attach the user object so later routes/controllers can use it
+        req.user = currentUser;
         next();
     }   catch (error){
         next(error); 
