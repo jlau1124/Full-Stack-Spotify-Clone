@@ -5,62 +5,76 @@ import FeaturedSection from "./components/FeaturedSection";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import SectionGrid from "./components/SectionGrid";
 import { usePlayerStore } from "@/stores/usePlayerStore";
+import { useAuthStore } from "@/stores/useAuthStore"; // assuming your auth store
 
 const HomePage = () => {
-    // Get functions and data from music store
-    // These are used to fetch different song sections
-    const {
-        fetchFeaturedSongs, 
-        fetchMadeForYouSongs, 
-        fetchTrendingSongs, 
-        isLoading, 
-        madeForYouSongs, 
-        featuredSongs, 
-        trendingSongs 
-    } = useMusicStore();
+  const {
+    fetchFeaturedSongs,
+    fetchMadeForYouSongs,
+    fetchTrendingSongs,
+    isLoading,
+    madeForYouSongs,
+    featuredSongs,
+    trendingSongs,
+  } = useMusicStore();
 
-    const { initializeQueue } = usePlayerStore(); // used to set up player queue
+  const { initializeQueue } = usePlayerStore();
+  const { userName } = useAuthStore(); // get the user's name
 
-    // Fetch songs when component mounts
-    useEffect(() => {
-        fetchFeaturedSongs();
-        fetchMadeForYouSongs();
-        fetchTrendingSongs();
-    }, [fetchFeaturedSongs, fetchMadeForYouSongs, fetchTrendingSongs]);
+  // Fetch songs on mount
+  useEffect(() => {
+    fetchFeaturedSongs();
+    fetchMadeForYouSongs();
+    fetchTrendingSongs();
+  }, [fetchFeaturedSongs, fetchMadeForYouSongs, fetchTrendingSongs]);
 
-    // Initialize the player queue after all songs are fetched
-    useEffect(() => {
-        if (madeForYouSongs.length > 0 && featuredSongs.length > 0 && trendingSongs.length > 0) {
-            const allSongs = [...featuredSongs, ...madeForYouSongs, ...trendingSongs];
-            initializeQueue(allSongs);
-        }
-    }, [initializeQueue, madeForYouSongs, trendingSongs, featuredSongs]);
+  // Initialize player queue after songs are fetched
+  useEffect(() => {
+    if (madeForYouSongs.length > 0 && featuredSongs.length > 0 && trendingSongs.length > 0) {
+      const allSongs = [...featuredSongs, ...madeForYouSongs, ...trendingSongs];
+      initializeQueue(allSongs);
+    }
+  }, [initializeQueue, madeForYouSongs, trendingSongs, featuredSongs]);
 
-    return (
-        <main className="rounded-md overflow-hidden h-full bg-gradient-to-b from-zinc-800 to-zinc-900">
-            {/* Topbar component is the header of the homepage */}
-            <Topbar/>
+  // Function to generate time-aware greeting
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    let greeting = "Hello";
 
-            {/* Scrollable area for the main content */}
-            <ScrollArea className="h-[calc(100vh-180px)]">
-                <div className="p-4 sm:p-6">
-                    {/* Greeting header */}
-                    <h1 className="text-2xl sm:text-3xl font-bold mb-6">
-                     Greetings {userName}
-                    </h1>
+    if (hour >= 5 && hour < 12) {
+      greeting = "Good Morning";
+    } else if (hour >= 12 && hour < 18) {
+      greeting = "Good Afternoon";
+    } else {
+      greeting = "Good Evening";
+    }
 
-                    {/* Featured songs section */}
-                    <FeaturedSection/>
+    return `${greeting}${userName ? `, ${userName}` : ""}`;
+  };
 
-                    {/* Other song sections */}
-                    <div className="space-y-8">
-                        <SectionGrid title="Made For You" songs={madeForYouSongs} isLoading={isLoading}/>
-                        <SectionGrid title="Trending" songs={trendingSongs} isLoading={isLoading}/>
-                    </div>
-                </div>
-            </ScrollArea>
-        </main>
-    );
+  return (
+    <main className="rounded-md overflow-hidden h-full bg-gradient-to-b from-zinc-800 to-zinc-900">
+      {/* Topbar component */}
+      <Topbar />
+
+      {/* Scrollable area */}
+      <ScrollArea className="h-[calc(100vh-180px)]">
+        <div className="p-4 sm:p-6">
+          {/* Greeting header */}
+          <h1 className="text-2xl sm:text-3xl font-bold mb-6">{getGreeting()}</h1>
+
+          {/* Featured songs section */}
+          <FeaturedSection />
+
+          {/* Other song sections */}
+          <div className="space-y-8">
+            <SectionGrid title="Made For You" songs={madeForYouSongs} isLoading={isLoading} />
+            <SectionGrid title="Trending" songs={trendingSongs} isLoading={isLoading} />
+          </div>
+        </div>
+      </ScrollArea>
+    </main>
+  );
 };
 
 export default HomePage;
